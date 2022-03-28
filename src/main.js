@@ -236,27 +236,33 @@ const isDnaUnique = (_DnaList = new Set(), _dna = "") => {
   return !_DnaList.has(_filteredDNA);
 };
 
+// layers represent the different layers in an image.
+// Returns a string that is a concatenation of the chosen layers.
 const createDna = (_layers) => {
   let randNum = [];
   _layers.forEach((layer) => {
     var totalWeight = 0;
     layer.elements.forEach((element) => {
+      // element.weight = rarity weight defined through #30 in filename
       totalWeight += element.weight;
     });
     // number between 0 - totalWeight
     let random = Math.floor(Math.random() * totalWeight);
     for (var i = 0; i < layer.elements.length; i++) {
       // subtract the current weight from the random weight until we reach a sub zero value.
+      // the greater the rarity value, the sooner we are below 0, therefore increasing the chance that a 
+      // layer with a large rarity value will be chosen.
       random -= layer.elements[i].weight;
       if (random < 0) {
-        return randNum.push(
-          `${layer.elements[i].id}:${layer.elements[i].filename}${layer.bypassDNA ? "?bypassDNA=true" : ""
-          }`
-        );
+        let str = `${layer.elements[i].id}:${layer.elements[i].filename}${layer.bypassDNA ? "?bypassDNA=true" : ""}`
+        // console.log(str);
+        return randNum.push(str);
       }
     }
   });
-  return randNum.join(DNA_DELIMITER);
+  let to_return = randNum.join(DNA_DELIMITER);
+  // console.log(to_return)
+  return to_return
 };
 
 const writeMetaData = (_data) => {
@@ -295,6 +301,7 @@ const startCreating = async () => {
   let editionCount = 1;
   let failedCount = 0;
   let abstractedIndexes = [];
+  // how many NFTs in an edition:
   for (
     let i = network == NETWORK.sol ? 0 : 1;
     i <= layerConfigurations[layerConfigurations.length - 1].growEditionSizeTo;
@@ -316,6 +323,7 @@ const startCreating = async () => {
       editionCount <= layerConfigurations[layerConfigIndex].growEditionSizeTo
     ) {
       let newDna = createDna(layers);
+      console.log('newDna', newDna)
       if (isDnaUnique(dnaList, newDna)) {
         const canvas = createCanvas(format.width, format.height);
         const ctx = canvas.getContext("2d");
@@ -333,7 +341,7 @@ const startCreating = async () => {
           ctx.textAlign = text.align;
           ctx.fillText(_sig, x, y);
         };
-        
+
         const drawElement = (_renderObject, _index, _layersLen) => {
           ctx.globalAlpha = _renderObject.layer.opacity;
           ctx.globalCompositeOperation = _renderObject.layer.blend;
@@ -351,7 +359,7 @@ const startCreating = async () => {
               format.width,
               format.height
             );
-        
+
           addAttributes(_renderObject);
         };
 
